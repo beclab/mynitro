@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- <link rel="stylesheet" type="text/css" href="static/model_config_styles.css"> -->
+    <title>Input your model config</title>
+    <style>
+        body {
+            background-image: url("{{.BackgroundImageURL}}");
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            text-align: center;
+            color: white;
+        }
+
+        #modelID {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #modelConfig {
+            width: 100%;
+            height: 400px;
+            box-sizing: border-box;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        input[type="submit"],
+        input[type="button"] {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>Input your model config</h1>
+<form action="{{.Prefix}}/model_config/submit" method="post">
+    <label for="modelID">Model ID:</label>
+    <input type="text" id="modelID" name="modelID"><br><br>
+    <label for="modelConfig">Model Config:</label><br>
+    <textarea id="modelConfig" name="modelConfig" rows="16" cols="50"></textarea><br><br>
+    <div class="button-container">
+        <input type="submit" value="Submit">
+        <input type="button" value="Cancel" onclick="location.href='{{.Prefix}}/model_config/cancel'">
+    </div>
+</form>
+</body>
+</html>

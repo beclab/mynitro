@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Realtime Log</title>
+    <script>
+        function getLog() {
+            fetch("{{.LogURL}}")
+                .then(response => response.text())
+                .then(data => {
+                    // 将日志内容显示在页面上
+                    document.getElementById('log-content').innerText = data;
+                })
+                .catch(error => {
+                    console.error('Failed to fetch log:', error);
+                });
+        }
+
+        // 先调用一次getLog函数
+        getLog();
+
+        setInterval(getLog, 2000); // 每5秒调用一次getLog函数
+    </script>
+</head>
+<body>
+<pre id="log-content"></pre>
+</body>
+</html>

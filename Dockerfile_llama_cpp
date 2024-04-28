@@ -1,0 +1,44 @@
+# FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+# FROM ubuntu:22.04
+MAINTAINER wangrongxiang
+
+ENV TZ=Asia/Shanghai
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get -y update && \
+    apt-get install -y --no-install-recommends tzdata && \
+    apt-get install -y --no-install-recommends curl sudo git git-lfs build-essential cmake && \
+    apt-get install -y --no-install-recommends libjsoncpp-dev uuid-dev ca-certificates && \
+    apt-get install -y --no-install-recommends g++ libssl-dev zlib1g-dev libpq-dev libmysqlclient-dev && \
+    apt-get install -y --no-install-recommends nvidia-cuda-toolkit
+RUN git config --global http.sslverify false && \
+    git config --global https.sslverify false && \
+    git clone https://github.com/ggerganov/llama.cpp
+
+WORKDIR llama.cpp
+RUN git checkout 42ea63c5a3da01d4a94e906d8565868012c79f4f
+#RUN mkdir build
+#WORKDIR build
+# RUN cmake ..
+#RUN cmake .. -DLLAMA_CUBLAS=ON -DLLAMA_AVX=OFF -DLLAMA_AVX2=OFF -DLLAMA_F16C=OFF -DLLAMA_FMA=OFF -DLLAMA_AVX512=OFF -DLLAMA_SSE=OFF -DLLAMA_SSSE=OFF -DLLAMA_VSX=OFF
+#RUN cmake --build . --config Release
+#ENV LLAMA_CUBLAS=1
+# RUN make
+
+RUN git lfs install
+#WORKDIR ../models
+WORKDIR models
+RUN git clone https://huggingface.co/lovehunter9/3b_v1.1_gguf
+#RUN curl -O -L https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q4_K_M.gguf
+#RUN curl -O -L https://huggingface.co/TheBloke/Llama-2-13B-chat-GGUF/resolve/main/llama-2-13b-chat.Q4_K_M.gguf
+
+EXPOSE 8080
+
+WORKDIR ..
+COPY . ./
+RUN chmod +x docker2.sh
+
+ENTRYPOINT ["./docker2.sh"]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
+# ENTRYPOINT ["build/bin/server", "-m", "models/3b_v1.1_gguf/3b_ggml-model-q4_0.gguf", "--port", "8080", "--host",  "0.0.0.0", "-ngl", "99"]

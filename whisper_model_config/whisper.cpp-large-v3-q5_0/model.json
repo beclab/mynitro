@@ -1,0 +1,11 @@
+{
+    "source_url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-q5_0.bin",
+    "id": "whisper.cpp-large-v3-q5_0",
+    "object": "model",
+    "name": "Whistper.CPP Large V3 Q5_0",
+    "version": "1.0",
+    "description": "OpenAI's Whisper models converted to ggml format",
+    "format": "gguf",
+    "engine": "nitro"
+  }
+  
