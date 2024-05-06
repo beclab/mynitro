@@ -1,5 +1,6 @@
 # 第一阶段：构建阶段
-FROM nvidia/cuda:12.0.0-cudnn8-runtime-ubuntu22.04 AS builder
+# FROM nvidia/cuda:12.0.0-cudnn8-runtime-ubuntu22.04 AS builder
+FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS builder
 MAINTAINER wangrongxiang
 
 ENV TZ=Asia/Shanghai
@@ -43,8 +44,13 @@ COPY --from=builder /nitro/build/nitro /nitro/build/nitro
 #    apt-get install -y --no-install-recommends nvidia-cuda-toolkit && \
 RUN apt-get -y update && \
     apt-get install -y --no-install-recommends curl ca-certificates && \
+    apt-get install -y --no-install-recommends bash libopenblas-dev && \
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/*
+
+RUN mkdir wasm
+WORKDIR wasm
+RUN curl -LO https://github.com/LlamaEdge/LlamaEdge/releases/latest/download/llama-api-server.wasm
 
 # 设置工作目录和其他操作
 WORKDIR /
@@ -56,12 +62,25 @@ COPY static static
 COPY whisper_model_config whisper_model_config
 # COPY . ./
 COPY --from=builder mynitro mynitro
+# This is for new cloud version, which is without libcuda.so.1 for unknown reason
 COPY --from=builder usr/lib/x86_64-linux-gnu/libcuda.so.1 usr/lib/x86_64-linux-gnu/libcuda.so.1
+
 COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart.so.11.0 usr/lib/x86_64-linux-gnu/libcudart.so.11.0
 COPY --from=builder usr/lib/x86_64-linux-gnu/libcublas.so.11 usr/lib/x86_64-linux-gnu/libcublas.so.11
 COPY --from=builder usr/lib/x86_64-linux-gnu/libcublasLt.so.11 usr/lib/x86_64-linux-gnu/libcublasLt.so.11
+
+# These below 3 lines are for minibox, which is based on cuda12, but under test and without minization for the time being.
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart.so* usr/lib/x86_64-linux-gnu/
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcublas.so* usr/lib/x86_64-linux-gnu/
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcublasLt.so* usr/lib/x86_64-linux-gnu/
+
+# COPY --from=builder usr/lib/x86_64-linux-gnu/libcu* usr/lib/x86_64-linux-gnu/
 #COPY --from=builder usr/local/cuda-12.0/targets/x86_64-linux/lib usr/local/cuda-12.0/targets/x86_64-linux/lib
 #COPY --from=builder usr/local/bin usr/local/bin
+
+#COPY --from=builder /root/.wasmedge /root/.wasmedge
+#RUN curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install_v2.sh | bash -s
+
 RUN mkdir model
 #RUN go build -o mynitro
 

@@ -6,15 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os/exec"
 )
 
-func unsetDifyModel(r *http.Request) (string, error) {
+func unsetWASMDifyModel(r *http.Request) (string, error) {
 	url := "http://dify/console/api/workspaces/current/model-providers/openai_api_compatible/models"
 
 	// 构建请求体数据
 	payload := map[string]interface{}{
-		"model":      "nitro",
+		"model":      "wasm",
 		"model_type": "llm",
 	}
 	jsonPayload, err := json.Marshal(payload)
@@ -53,7 +52,7 @@ func unsetDifyModel(r *http.Request) (string, error) {
 	return string(body), nil
 }
 
-func HandleUnload(w http.ResponseWriter, r *http.Request) {
+func HandleWASMUnload(w http.ResponseWriter, r *http.Request) {
 	option := r.URL.Query().Get("option")
 
 	downloadTasksLock.RLock()
@@ -61,16 +60,30 @@ func HandleUnload(w http.ResponseWriter, r *http.Request) {
 	downloadTasksLock.RUnlock()
 
 	if task.Type == "whisper" {
-		fmt.Fprint(w, "Whisper Model cannot be stopped in current nitro version!")
+		fmt.Fprint(w, "Whisper Model cannot be stopped by wasm!")
+		return
+	}
+
+	if WASMPid == 0 {
+		fmt.Fprint(w, "WASM LLM Model not running!")
 		return
 	}
 
 	// 处理卸载逻辑，使用选项值"option"
-	unloadCmd := exec.Command("curl", "http://localhost:3928/inferences/llamacpp/unloadmodel")
-	err := unloadCmd.Run()
+	////unloadCmd := exec.Command("curl", "http://localhost:3928/inferences/llamacpp/unloadmodel")
+	////err := unloadCmd.Run()
+	//if err != nil {
+	//	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	//	return
+	//}
+
+	err := KillProcess(WASMPid)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		fmt.Println("Failed to kill process:", err)
+		fmt.Fprintf(w, "Failed to kill process:%s", err)
 		return
+	} else {
+		fmt.Println("Process killed successfully.")
 	}
 
 	// 将所有任务状态为 "running" 的任务状态置为 "installed"
@@ -83,11 +96,11 @@ func HandleUnload(w http.ResponseWriter, r *http.Request) {
 	downloadTasksLock.Unlock()
 
 	// DIFY设置MODEL
-	unsetResp, err := unsetDifyModel(r)
+	unsetResp, err := unsetWASMDifyModel(r)
 
 	runningType = ""
 
-	fmt.Fprintf(w, "Nitro Unload option: %s\n", option)
+	fmt.Fprintf(w, "WASM Unload option: %s\n", option)
 	if err != nil {
 		fmt.Println("Dify model unset failed. Please retry or manually unset it.")
 		fmt.Fprintf(w, "Dify model unset failed. Please retry or manually unset it. Rsep body: %s\n", unsetResp)

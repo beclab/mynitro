@@ -2,8 +2,9 @@ model/
 nitro/
 nitro/build
 nitro/build_deps
-nitro.log
+*.log
 mynitro
 custom_model_config/
 log_position.txt
 .DS_Store
+.idea

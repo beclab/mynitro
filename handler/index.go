@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 )
 
 var prefix = os.Getenv("PREFIX")
+var runningType = ""
 
 func HandleIndex(w http.ResponseWriter, r *http.Request) {
 	// 获取 URL 参数中的选项值
@@ -81,16 +83,19 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 				.buttons input[type="submit"]:not(:last-child) {
 					margin-right: 10px;
 				}
+				.button-wrapper {
+        			margin-right: 10px;
+    			}
 				.button {
 					background-color: #007bff;
 					border: none;
 					color: white;
-					padding: 10px 20px;
+					padding: 8px 16px;
 					text-align: center;
 					text-decoration: none;
 					display: inline-block;
 					font-size: 16px;
-					margin-top: 10px;
+					margin-top: 0px;
 					border-radius: 5px;
 					cursor: pointer;
 				}
@@ -101,12 +106,12 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
   					background-color: #ff4500;
   					border: none;
   					color: white;
-  					padding: 10px 20px;
+  					padding: 8px 16px;
   					text-align: center;
   					text-decoration: none;
   					display: inline-block;
   					font-size: 16px;
-  					margin-top: 10px;
+  					margin-top: 0px;
   					border-radius: 5px;
   					cursor: pointer;
 				}
@@ -122,7 +127,7 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
     				font-size: 16px;
     				position: fixed;
     				top: 20px;
-                    right: 120px; /* 调整按钮位置，使其向左移动一些 */
+                    right: 250px; /* 调整按钮位置，使其向左移动一些 */
     				border-radius: 4px;
     				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     				cursor: pointer;
@@ -130,6 +135,25 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
   				}
 
   				.view-log-button:hover {
+					background-color: #00568c;
+  				}
+
+				.view-log-button2 {
+					background-color: #0077be;
+					color: white;
+					border: none;
+    				padding: 10px 20px;
+    				font-size: 16px;
+    				position: fixed;
+    				top: 20px;
+                    right: 120px; /* 调整按钮位置，使其向左移动一些 */
+    				border-radius: 4px;
+    				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    				cursor: pointer;
+    				text-decoration: none;
+  				}
+
+  				.view-log-button2:hover {
 					background-color: #00568c;
   				}
 				.restart-button {
@@ -186,11 +210,14 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 			</script>
 		</head>
 		<body>
-			<a class="view-log-button" href="` + prefix + `/view_log" target="_blank">View Log</a>
+			<a class="view-log-button" href="` + prefix + `/view_nitro_log" target="_blank">Nitro Log</a>
+			<a class="view-log-button2" href="` + prefix + `/view_wasm_log" target="_blank">WASM Log</a>
 			<a class="restart-button" href="` + prefix + `/restart">Restart</a>
 			<div class="container">
 				<h1 class="title">Choose Your Model</h1>
 				<form action="` + prefix + `/download" method="get" onsubmit="return validateForm();">
+					<div class="left-align"><b>Current LLM Running By: ` + runningType + `</b></div>
+					<br>
 					<div class="left-align"><b>Usable Builtin Model IDs:</b></div>
 					<ul class="options">` + GenerateOptions(option, "default") + `</ul>
 					<br>
@@ -200,14 +227,29 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 					<div class="left-align"><b>Usable Custom Model IDs:</b></div>
 					<ul class="options">` + GenerateOptions(option, "custom") + `</ul>
 					<div class="buttons">
-						<input type="submit" value="Install">
-						<input type="submit" formaction="` + prefix + `/load" formmethod="get" formnovalidate value="Load">
-						<input type="submit" formaction="` + prefix + `/unload" formmethod="get" formnovalidate value="Stop">
-						<input type="submit" formaction="` + prefix + `/delete" formmethod="get" formnovalidate value="Delete">
+						<div class="button-wrapper">
+        					<a class="button2" href="` + prefix + `/model_config">Add New Model</a>
+    					</div>
+						&nbsp;
+						<div class="button-wrapper">
+        					<input type="submit" value="Install">
+    					</div>
+						&nbsp;
+    					<div class="button-wrapper">
+        					<input type="submit" formaction="` + prefix + `/delete" formmethod="get" formnovalidate value="Delete">
+    					</div>
+						&nbsp;
+    					<div class="button-wrapper">
+        					<a class="button" href="` + difyURL + `">Go to dify! →</a>
+    					</div>
+					</div>
+					<div class="buttons">
+						<input type="submit" id="nitroLoadButton" formaction="` + prefix + `/nitro_load" formmethod="get" formnovalidate value="Nitro Load">
+						<input type="submit" id="nitroUnloadButton" formaction="` + prefix + `/nitro_unload" formmethod="get" formnovalidate value="Nitro Stop">
+						<input type="submit" id="wasmLoadButton" formaction="` + prefix + `/load" formmethod="get" formnovalidate value="WASM Load">
+						<input type="submit" id="wasmUnloadButton" formaction="` + prefix + `/unload" formmethod="get" formnovalidate value="WASM Stop">
 					</div>
 				</form>
-				<a class="button2" href="` + prefix + `/model_config">Add New Model</a>
-				<a class="button" href="` + difyURL + `">Go to dify! →</a>
 			</div>
 		</body>
 		</html>
@@ -344,4 +386,28 @@ func isChecked(option, selectedOption string) string {
 		return "checked"
 	}
 	return ""
+}
+
+// 响应结构体
+type Response struct {
+	RunningType string `json:"runningType"`
+}
+
+func HandleRunningType(w http.ResponseWriter, r *http.Request) {
+	// 创建响应结构体
+	response := Response{RunningType: runningType}
+
+	// 将响应序列化为 JSON
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 设置响应头
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// 发送响应
+	w.Write(jsonResponse)
 }

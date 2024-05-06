@@ -1,4 +1,4 @@
-module example.com/m/v2
+module mynitro
 
 go 1.20
 

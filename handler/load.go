@@ -8,9 +8,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"time"
 )
 
-func setDifyModel(r *http.Request) (string, error) {
+var NitroPid = 0
+
+func setDifyModel(r *http.Request) (int, string, error) {
 	url := "http://dify/console/api/workspaces/current/model-providers/openai_api_compatible/models"
 
 	// 构建请求体数据
@@ -20,7 +23,7 @@ func setDifyModel(r *http.Request) (string, error) {
 		"credentials": map[string]interface{}{
 			"mode":                    "chat",
 			"context_size":            "4096",
-			"max_tokens_to_sample":    "4096",
+			"max_tokens_to_sample":    "1024",
 			"function_calling_type":   "no_call",
 			"stream_function_calling": "not_supported",
 			"vision_support":          "no_support",
@@ -32,14 +35,14 @@ func setDifyModel(r *http.Request) (string, error) {
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		fmt.Println("JSON marshal error:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	// 创建 HTTP 请求
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		fmt.Println("HTTP request creation error:", err)
-		return "", err
+		return 0, "", err
 	}
 	req.Header = r.Header
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
@@ -49,7 +52,7 @@ func setDifyModel(r *http.Request) (string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("HTTP request error:", err)
-		return "", err
+		return 0, "", err
 	}
 	defer resp.Body.Close()
 
@@ -57,15 +60,20 @@ func setDifyModel(r *http.Request) (string, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Read response error:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	// 打印响应结果
 	fmt.Println(string(body))
-	return string(body), nil
+	return resp.StatusCode, string(body), nil
 }
 
 func HandleLoad(w http.ResponseWriter, r *http.Request) {
+	if runningType == "WASM" {
+		fmt.Fprintf(w, "WASM LLM Model Running! Can't run two LLM models at the same time. Please WASM Stop first!")
+		return
+	}
+
 	option := r.URL.Query().Get("option")
 
 	downloadTasksLock.RLock()
@@ -135,10 +143,17 @@ func HandleLoad(w http.ResponseWriter, r *http.Request) {
 		downloadTasksLock.Unlock()
 
 		// DIFY设置MODEL
-		setResp, err := setDifyModel(r)
+		modelStatus := 0
+		setResp := ""
+		for modelStatus != 200 {
+			modelStatus, setResp, err = setDifyModel(r)
+			time.Sleep(1 * time.Second)
+		}
+
+		runningType = "Nitro"
 
 		// 返回结果
-		fmt.Fprintf(w, "Load option: %s\n", option)
+		fmt.Fprintf(w, "Nitro Load option: %s\n", option)
 		fmt.Fprintf(w, "CURL output:\n%s\n", output)
 		if err != nil {
 			fmt.Println("Dify model set failed. Please retry or manually set it.")
