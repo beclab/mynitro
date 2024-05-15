@@ -124,7 +124,7 @@ func setWasmDifyModel(r *http.Request) (int, string, error) {
 	return resp.StatusCode, string(body), nil
 }
 
-func HandleWasmLoad(w http.ResponseWriter, r *http.Request) {
+func HandleWASMLoad(w http.ResponseWriter, r *http.Request) {
 	if runningType == "Nitro" {
 		fmt.Fprintf(w, "Nitro LLM Model Running! Can't run two llm models at the same time. Please Nitro Stop first!")
 		return

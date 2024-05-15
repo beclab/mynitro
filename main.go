@@ -85,7 +85,7 @@ func handleModelRequest(w http.ResponseWriter, r *http.Request) {
 		newRequest = newRequest.WithContext(r.Context())
 
 		// 调用 HandleProgress 处理函数
-		handler.HandleLoad(w, newRequest) // POST /load?option=3B
+		handler.HandleWASMLoad(w, newRequest) // POST /load?option=3B
 	case "stop":
 		newURL := "/unload?option=" + id
 		fmt.Println(newURL)
@@ -101,7 +101,7 @@ func handleModelRequest(w http.ResponseWriter, r *http.Request) {
 		newRequest = newRequest.WithContext(r.Context())
 
 		// 调用 HandleProgress 处理函数
-		handler.HandleUnload(w, newRequest) // POST /model/:id/stop
+		handler.HandleWASMUnload(w, newRequest) // POST /model/:id/stop
 	case "install":
 		newURL := "/download?progressor=false&option=" + id
 		fmt.Println(newURL)
@@ -172,7 +172,7 @@ func main() {
 	r.HandleFunc("/download", handler.HandleDownload)
 	r.HandleFunc("/nitro_load", handler.HandleLoad)
 	r.HandleFunc("/nitro_unload", handler.HandleUnload)
-	r.HandleFunc("/load", handler.HandleWasmLoad)
+	r.HandleFunc("/load", handler.HandleWASMLoad)
 	r.HandleFunc("/unload", handler.HandleWASMUnload)
 	r.HandleFunc("/progress", handler.HandleProgress)
 	r.HandleFunc("/delete", handler.HandleDelete)
