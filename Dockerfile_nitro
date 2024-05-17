@@ -8,10 +8,23 @@ RUN apt-get -y update && \
     apt-get install -y --no-install-recommends tzdata golang vim && \
     apt-get install -y --no-install-recommends curl sudo git build-essential cmake && \
     apt-get install -y --no-install-recommends libjsoncpp-dev uuid-dev ca-certificates && \
-    apt-get install -y --no-install-recommends g++ libssl-dev zlib1g-dev libpq-dev libmysqlclient-dev && \
+    apt-get install -y --no-install-recommends g++ libssl-dev zlib1g-dev libpq-dev libmysqlclient-dev wget && \
     apt-get install -y --no-install-recommends nvidia-cuda-toolkit && \
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/*
+#RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin && \
+#    sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+#    wget https://developer.download.nvidia.com/compute/cuda/12.4.1/local_installers/cuda-repo-ubuntu2004-12-4-local_12.4.1-550.54.15-1_amd64.deb && \
+#    sudo dpkg -i cuda-repo-ubuntu2004-12-4-local_12.4.1-550.54.15-1_amd64.deb && \
+#    sudo cp /var/cuda-repo-ubuntu2004-12-4-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
+#    sudo apt-get update && \
+#    sudo apt-get -y install cuda-toolkit-12-4
+#RUN wget https://developer.download.nvidia.com/compute/cuda/12.0.1/local_installers/cuda_12.0.1_525.85.12_linux.run && \
+#    sudo sh cuda_12.0.1_525.85.12_linux.run
+RUN find / -name "libcuda.so.1"
+RUN find / -name "libcudart.so.*"
+RUN find / -name "libcublas.so.*"
+RUN find / -name "libcublasLt.so.*"
 RUN git config --global http.sslverify false && \
     git config --global https.sslverify false && \
     git clone --recurse https://github.com/janhq/nitro
@@ -63,15 +76,18 @@ COPY whisper_model_config whisper_model_config
 # COPY . ./
 COPY --from=builder mynitro mynitro
 # This is for new cloud version, which is without libcuda.so.1 for unknown reason
-COPY --from=builder usr/lib/x86_64-linux-gnu/libcuda.so.1 usr/lib/x86_64-linux-gnu/libcuda.so.1
+COPY --from=builder usr/lib/x86_64-linux-gnu/libcuda.so.1 .
 
 COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart.so.11.0 usr/lib/x86_64-linux-gnu/libcudart.so.11.0
 COPY --from=builder usr/lib/x86_64-linux-gnu/libcublas.so.11 usr/lib/x86_64-linux-gnu/libcublas.so.11
 COPY --from=builder usr/lib/x86_64-linux-gnu/libcublasLt.so.11 usr/lib/x86_64-linux-gnu/libcublasLt.so.11
+COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcudart.so.12 usr/lib/x86_64-linux-gnu/libcudart.so.12
+COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublas.so.12 usr/lib/x86_64-linux-gnu/libcublas.so.12
+COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublasLt.so.12 usr/lib/x86_64-linux-gnu/libcublasLt.so.12
 
 # These below 3 lines are for minibox, which is based on cuda12, but under test and without minization for the time being.
-#COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart.so* usr/lib/x86_64-linux-gnu/
-#COPY --from=builder usr/lib/x86_64-linux-gnu/libcublas.so* usr/lib/x86_64-linux-gnu/
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart* usr/lib/x86_64-linux-gnu/
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcublas* usr/lib/x86_64-linux-gnu/
 #COPY --from=builder usr/lib/x86_64-linux-gnu/libcublasLt.so* usr/lib/x86_64-linux-gnu/
 
 # COPY --from=builder usr/lib/x86_64-linux-gnu/libcu* usr/lib/x86_64-linux-gnu/
