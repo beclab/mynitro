@@ -28,7 +28,7 @@ go build -o mynitro
 ### Set OS Environments
 ```shell
 export NGL_VALUE=33
-export C_VALUE=4096
+export C_VALUE=1024
 export OTHER_VALUES=
 ```
 ### Run

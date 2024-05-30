@@ -27,9 +27,17 @@ RUN find / -name "libcublas.so.*"
 RUN find / -name "libcublasLt.so.*"
 RUN git config --global http.sslverify false && \
     git config --global https.sslverify false && \
-    git clone --recurse https://github.com/janhq/nitro
+    git clone --branch main --recurse https://github.com/janhq/nitro
+
+#WORKDIR /nitro/llama.cpp
+#RUN git checkout 15499eb94227401bdc8875da6eb85c15d37068f7
+
+#WORKDIR /nitro/whisper.cpp
+#RUN git checkout a0ddd8392c3427e833d893dc79b9b50f43cf8c9e
 
 WORKDIR /nitro
+#RUN git checkout main
+#RUN git checkout be649984cd37cd60b5cf418bbc0efde767e8970d
 RUN ./install_deps.sh
 
 RUN mkdir build

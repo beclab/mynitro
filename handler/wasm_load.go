@@ -72,13 +72,19 @@ func KillProcess(pid int) error {
 func setWasmDifyModel(r *http.Request) (int, string, error) {
 	url := "http://dify/console/api/workspaces/current/model-providers/openai_api_compatible/models"
 
+	cValue := os.Getenv("C_VALUE")
+
+	if cValue == "" {
+		cValue = "1024" // 默认值为 4096
+	}
+
 	// 构建请求体数据
 	payload := map[string]interface{}{
 		"model":      "wasm",
 		"model_type": "llm",
 		"credentials": map[string]interface{}{
 			"mode":                    "chat",
-			"context_size":            "4096",
+			"context_size":            cValue, // "4096",
 			"max_tokens_to_sample":    "1024",
 			"function_calling_type":   "no_call",
 			"stream_function_calling": "not_supported",
@@ -152,7 +158,7 @@ func HandleWASMLoad(w http.ResponseWriter, r *http.Request) {
 	nglValue := os.Getenv("NGL_VALUE")
 
 	if cValue == "" {
-		cValue = "4096" // 默认值为 4096
+		cValue = "1024" // 默认值为 4096
 	}
 
 	if nglValue == "" {
