@@ -53,6 +53,8 @@ func handleModelRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(id, action)
 
+	llmUtil := os.Getenv("LLM_UTIL")
+
 	switch action {
 	case "":
 		newURL := "/progress?id=" + id
@@ -85,7 +87,11 @@ func handleModelRequest(w http.ResponseWriter, r *http.Request) {
 		newRequest = newRequest.WithContext(r.Context())
 
 		// 调用 HandleProgress 处理函数
-		handler.HandleWASMLoad(w, newRequest) // POST /load?option=3B
+		if llmUtil == "WASM" {
+			handler.HandleWASMLoad(w, newRequest) // POST /load?option=3B
+		} else {
+			handler.HandleLoad(w, newRequest)
+		}
 	case "stop":
 		newURL := "/unload?option=" + id
 		fmt.Println(newURL)
@@ -101,7 +107,11 @@ func handleModelRequest(w http.ResponseWriter, r *http.Request) {
 		newRequest = newRequest.WithContext(r.Context())
 
 		// 调用 HandleProgress 处理函数
-		handler.HandleWASMUnload(w, newRequest) // POST /model/:id/stop
+		if llmUtil == "WASM" {
+			handler.HandleWASMUnload(w, newRequest) // POST /model/:id/stop
+		} else {
+			handler.HandleUnload(w, newRequest)
+		}
 	case "install":
 		newURL := "/download?progressor=false&option=" + id
 		fmt.Println(newURL)
@@ -172,8 +182,16 @@ func main() {
 	r.HandleFunc("/download", handler.HandleDownload)
 	r.HandleFunc("/nitro_load", handler.HandleLoad)
 	r.HandleFunc("/nitro_unload", handler.HandleUnload)
-	r.HandleFunc("/load", handler.HandleWASMLoad)
-	r.HandleFunc("/unload", handler.HandleWASMUnload)
+	r.HandleFunc("/wasm_load", handler.HandleWASMLoad)
+	r.HandleFunc("/wasm_unload", handler.HandleWASMUnload)
+	llmUtil := os.Getenv("LLM_UTIL")
+	if llmUtil == "WASM" {
+		r.HandleFunc("/load", handler.HandleWASMLoad)
+		r.HandleFunc("/unload", handler.HandleWASMUnload)
+	} else {
+		r.HandleFunc("/load", handler.HandleLoad)
+		r.HandleFunc("/unload", handler.HandleUnload)
+	}
 	r.HandleFunc("/progress", handler.HandleProgress)
 	r.HandleFunc("/delete", handler.HandleDelete)
 	r.HandleFunc("/model_config", handler.ModelConfigHandler)
