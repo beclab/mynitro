@@ -246,8 +246,8 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 					<div class="buttons">
 						<input type="submit" id="nitroLoadButton" formaction="` + prefix + `/nitro_load" formmethod="get" formnovalidate value="Nitro Load">
 						<input type="submit" id="nitroUnloadButton" formaction="` + prefix + `/nitro_unload" formmethod="get" formnovalidate value="Nitro Stop">
-						<input type="submit" id="wasmLoadButton" formaction="` + prefix + `/load" formmethod="get" formnovalidate value="WASM Load">
-						<input type="submit" id="wasmUnloadButton" formaction="` + prefix + `/unload" formmethod="get" formnovalidate value="WASM Stop">
+						<input type="submit" id="wasmLoadButton" formaction="` + prefix + `/wasm_load" formmethod="get" formnovalidate value="WASM Load">
+						<input type="submit" id="wasmUnloadButton" formaction="` + prefix + `/wasm_unload" formmethod="get" formnovalidate value="WASM Stop">
 					</div>
 				</form>
 			</div>
