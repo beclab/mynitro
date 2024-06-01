@@ -10,7 +10,7 @@ import (
 	"os/exec"
 )
 
-ARCH = os.Getenv("ARCH")
+ARCH := os.Getenv("ARCH")
 
 func StartNitro() {
 	cmd := exec.Command("./nitro", "1", "0.0.0.0", "3928")
