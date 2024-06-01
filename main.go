@@ -10,6 +10,8 @@ import (
 	"os/exec"
 )
 
+ARCH = os.Getenv("ARCH")
+
 func StartNitro() {
 	cmd := exec.Command("./nitro", "1", "0.0.0.0", "3928")
 	cmd.Dir = "nitro/build" // 设置工作目录为 nitro 文件夹下
@@ -172,8 +174,15 @@ func main() {
 	r.HandleFunc("/download", handler.HandleDownload)
 	r.HandleFunc("/nitro_load", handler.HandleLoad)
 	r.HandleFunc("/nitro_unload", handler.HandleUnload)
-	r.HandleFunc("/load", handler.HandleWASMLoad)
-	r.HandleFunc("/unload", handler.HandleWASMUnload)
+	r.HandleFunc("/wasm_load", handler.HandleWASMLoad)
+	r.HandleFunc("/wasm_unload", handler.HandleWASMUnload)
+	if ARCH == "WASM" {
+		r.HandleFunc("/load", handler.HandleWASMLoad)
+		r.HandleFunc("/unload", handler.HandleWASMUnload)
+	} else {
+		r.HandleFunc("/load", handler.HandleLoad)
+		r.HandleFunc("/unload", handler.HandleUnload)
+	}
 	r.HandleFunc("/progress", handler.HandleProgress)
 	r.HandleFunc("/delete", handler.HandleDelete)
 	r.HandleFunc("/model_config", handler.ModelConfigHandler)
