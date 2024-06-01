@@ -174,8 +174,8 @@ func main() {
 	r.HandleFunc("/nitro_unload", handler.HandleUnload)
 	r.HandleFunc("/wasm_load", handler.HandleWASMLoad)
 	r.HandleFunc("/wasm_unload", handler.HandleWASMUnload)
-	arch := os.Getenv("ARCH")
-	if arch == "WASM" {
+	llmUtil := os.Getenv("LLM_UTIL")
+	if llmUtil == "WASM" {
 		r.HandleFunc("/load", handler.HandleWASMLoad)
 		r.HandleFunc("/unload", handler.HandleWASMUnload)
 	} else {
