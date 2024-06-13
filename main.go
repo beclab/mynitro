@@ -4,39 +4,109 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
+	"math"
 	"mynitro/handler"
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
+	"strconv"
+	"time"
 )
+
+func convertToBytes(value string) (int64, error) {
+	re := regexp.MustCompile(`(\d+(?:\.\d+)?)\s*([KMGT]?B?)`)
+	matches := re.FindStringSubmatch(value)
+	if matches == nil {
+		num, err := strconv.ParseInt(value, 10, 64)
+		return num, err
+	}
+
+	numStr, unit := matches[1], matches[2]
+
+	num, err := strconv.ParseFloat(numStr, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	switch unit {
+	case "B":
+		return int64(num), nil
+	case "K", "KB":
+		return int64(num * math.Pow(1024, 1)), nil
+	case "M", "MB":
+		return int64(num * math.Pow(1024, 2)), nil
+	case "G", "GB":
+		return int64(num * math.Pow(1024, 3)), nil
+	case "T", "TB":
+		return int64(num * math.Pow(1024, 4)), nil
+	default:
+		return 0, fmt.Errorf("unsupported unit: %s", unit)
+	}
+}
 
 func StartNitro() {
 	cmd := exec.Command("./nitro", "1", "0.0.0.0", "3928")
-	cmd.Dir = "nitro/build" // 设置工作目录为 nitro 文件夹下
+	cmd.Dir = "nitro/build"
 
-	// 创建日志文件
-	logFile, err := os.Create("nitro.log")
+	logFile, err := os.OpenFile("nitro.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println("Failed to create log file:", err)
+		fmt.Println("Failed to open log file:", err)
 		return
 	}
-	defer logFile.Close()
 
-	// 将标准输出和标准错误输出导入日志文件
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 
-	// 启动命令
 	err = cmd.Start()
 	if err != nil {
 		fmt.Println("Failed to start nitro:", err)
+		logFile.Close()
+		return
 	} else {
 		fmt.Println("Nitro started successfully.")
 	}
 
-	// 记录命令的 PID
 	handler.NitroPid = cmd.Process.Pid
 	fmt.Println("Nitro started successfully. PID:", handler.NitroPid)
+
+	logSize := os.Getenv("LOG_SIZE")
+	if logSize == "" {
+		logSize = "15M"
+	}
+	logBytes, err := convertToBytes(logSize)
+	if err != nil {
+		fmt.Println("Parse log file size failed:", err)
+		fmt.Println("Will use default log file size limit.")
+		logBytes = 15 * 1024 * 1024
+	}
+	fmt.Println("Nitro log size limit:", logBytes, " Bytes")
+
+	go func() {
+		defer logFile.Close() // 在 goroutine 结束时关闭日志文件
+
+		for {
+			time.Sleep(10 * time.Second)
+			fileInfo, err := logFile.Stat()
+			if err != nil {
+				fmt.Println("Failed to get log file info:", err)
+				continue
+			}
+			if fileInfo.Size() > logBytes {
+				fmt.Println("Clearing log file:", fileInfo.Name())
+				_, err = logFile.Seek(0, 0)
+				if err != nil {
+					fmt.Println("Failed to seek to the beginning of the log file:", err)
+					continue
+				}
+				err = logFile.Truncate(0)
+				if err != nil {
+					fmt.Println("Failed to truncate the log file:", err)
+					continue
+				}
+			}
+		}
+	}()
 }
 
 func handleModelRequest(w http.ResponseWriter, r *http.Request) {
