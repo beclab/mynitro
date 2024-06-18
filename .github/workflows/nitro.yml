@@ -23,8 +23,44 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
+#      - name: Maximize build space
+#        uses: easimon/maximize-build-space@master
+#        with:
+#          root-reserve-mb: 21200
+#          swap-size-mb: 1024
+#          remove-dotnet: 'true'
+#          remove-android: 'true'
+#          remove-haskell: 'true'
+#          remove-codeql: 'true'
+
+      - name: Free Up GitHub Actions Ubuntu Runner Disk Space 🔧
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # This might remove tools that are actually needed, if set to "true" but frees about 6 GB
+          tool-cache: false
+
+          # All of these default to true, but feel free to set to "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
       - name: Check out the repo
         uses: actions/checkout@v3
+
+      - name: Clean up disk space
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /tmp/*
+          sudo df -h
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
@@ -45,12 +81,12 @@ jobs:
         with:
           fallback: latest
 
-      - name: Build Docker image
-#        run: docker build --platform linux/amd64 -t aboveos/nitro:${{ steps.get-latest-tag.outputs.tag }} -f ./Dockerfile_nitro .
-        run: docker build -t beclab/nitro:${{ steps.get-latest-tag.outputs.tag }} -f ./Dockerfile_nitro .
-
-      - name: Push Docker image
-        run: docker push beclab/nitro:${{ steps.get-latest-tag.outputs.tag }}
+#      - name: Build Docker image
+##        run: docker build --platform linux/amd64 -t aboveos/nitro:${{ steps.get-latest-tag.outputs.tag }} -f ./Dockerfile_nitro .
+#        run: docker build -t beclab/nitro:${{ steps.get-latest-tag.outputs.tag }} -f ./Dockerfile_nitro .
+#
+#      - name: Push Docker image
+#        run: docker push beclab/nitro:${{ steps.get-latest-tag.outputs.tag }}
 
 #      - name: Build and push Docker image
 #        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
@@ -60,3 +96,11 @@ jobs:
 #          push: true
 #          tags: ${{ steps.meta.outputs.tags }}
 #          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: beclab/nitro:${{ steps.get-latest-tag.outputs.tag }}
+          file: ./Dockerfile_nitro
+          platforms: linux/amd64,linux/arm64

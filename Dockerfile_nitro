@@ -3,6 +3,8 @@
 FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS builder
 MAINTAINER wangrongxiang
 
+RUN df -h
+
 ENV TZ=Asia/Shanghai
 RUN apt-get -y update && \
     apt-get install -y --no-install-recommends tzdata golang vim && \
@@ -25,6 +27,29 @@ RUN find / -name "libcuda.so.1"
 RUN find / -name "libcudart.so.*"
 RUN find / -name "libcublas.so.*"
 RUN find / -name "libcublasLt.so.*"
+
+ARG TARGETARCH
+RUN echo "TARGETARCH is ${TARGETARCH}"
+
+RUN mkdir temp_lib
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        cp usr/lib/x86_64-linux-gnu/libcuda.so.1 temp_lib/libcuda.so.1 && \
+        cp usr/lib/x86_64-linux-gnu/libcudart.so.11.0 temp_lib/libcudart.so.11.0 && \
+        cp usr/lib/x86_64-linux-gnu/libcublas.so.11 temp_lib/libcublas.so.11 && \
+        cp usr/lib/x86_64-linux-gnu/libcublasLt.so.11 temp_lib/libcublasLt.so.11 && \
+        cp usr/local/cuda-12.4/targets/x86_64-linux/lib/libcudart.so.12 temp_lib/libcudart.so.12 && \
+        cp usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublas.so.12 temp_lib/libcublas.so.12 && \
+        cp usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublasLt.so.12 temp_lib/libcublasLt.so.12; \
+    else \
+        touch temp_lib/libcuda.so.1 && \
+        cp usr/lib/aarch64-linux-gnu/libcudart.so.11.0 temp_lib/libcudart.so.11.0 && \
+        cp usr/lib/aarch64-linux-gnu/libcublas.so.11 temp_lib/libcublas.so.11 && \
+        cp usr/lib/aarch64-linux-gnu/libcublasLt.so.11 temp_lib/libcublasLt.so.11 && \
+        cp usr/local/cuda-12.4/targets/sbsa-linux/lib/libcudart.so.12 temp_lib/libcudart.so.12 && \
+        cp usr/local/cuda-12.4/targets/sbsa-linux/lib/libcublas.so.12 temp_lib/libcublas.so.12 && \
+        cp usr/local/cuda-12.4/targets/sbsa-linux/lib/libcublasLt.so.12 temp_lib/libcublasLt.so.12; \
+    fi
+
 RUN git config --global http.sslverify false && \
     git config --global https.sslverify false && \
     git clone --branch main --recurse https://github.com/janhq/nitro
@@ -42,7 +67,23 @@ RUN ./install_deps.sh
 
 RUN mkdir build
 WORKDIR build
-RUN cmake -DLLAMA_CUBLAS=ON ..
+RUN cmake -DLLAMA_CUDA=ON ..
+
+#ARG TARGETARCH
+#RUN echo "TARGETARCH is ${TARGETARCH}"
+#
+#RUN if [ "$TARGETARCH" = "amd64" ]; then \
+#        cmake -DLLAMA_CUBLAS=ON ..; \
+#    else \
+#        apt-get update && apt-get install -y libssl-dev libsqlite3-dev graphviz dia doxygen \
+#        && doxygen --version \
+#        && git clone https://github.com/an-tao/drogon.git \
+#        && mkdir -p drogon/build \
+#        && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=arm -S drogon -B drogon/build \
+#        && make -j$(nproc) -C drogon/build \
+#        && make install -C drogon/build \
+#        && cmake ..; \
+#    fi
 RUN make -j $(nproc)
 
 WORKDIR /
@@ -53,6 +94,8 @@ RUN go build -o mynitro
 #FROM nvidia/cuda:12.0.0-cudnn8-runtime-ubuntu22.04
 #FROM alpine:3.14
 FROM ubuntu:22.04
+
+RUN df -h
 
 # 设置时区
 #ENV TZ=Asia/Shanghai
@@ -84,14 +127,28 @@ COPY whisper_model_config whisper_model_config
 # COPY . ./
 COPY --from=builder mynitro mynitro
 # This is for new cloud version, which is without libcuda.so.1 for unknown reason
-COPY --from=builder usr/lib/x86_64-linux-gnu/libcuda.so.1 .
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcuda.so.1 .
+#
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart.so.11.0 usr/lib/x86_64-linux-gnu/libcudart.so.11.0
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcublas.so.11 usr/lib/x86_64-linux-gnu/libcublas.so.11
+#COPY --from=builder usr/lib/x86_64-linux-gnu/libcublasLt.so.11 usr/lib/x86_64-linux-gnu/libcublasLt.so.11
+#COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcudart.so.12 usr/lib/x86_64-linux-gnu/libcudart.so.12
+#COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublas.so.12 usr/lib/x86_64-linux-gnu/libcublas.so.12
+#COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublasLt.so.12 usr/lib/x86_64-linux-gnu/libcublasLt.so.12
 
-COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart.so.11.0 usr/lib/x86_64-linux-gnu/libcudart.so.11.0
-COPY --from=builder usr/lib/x86_64-linux-gnu/libcublas.so.11 usr/lib/x86_64-linux-gnu/libcublas.so.11
-COPY --from=builder usr/lib/x86_64-linux-gnu/libcublasLt.so.11 usr/lib/x86_64-linux-gnu/libcublasLt.so.11
-COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcudart.so.12 usr/lib/x86_64-linux-gnu/libcudart.so.12
-COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublas.so.12 usr/lib/x86_64-linux-gnu/libcublas.so.12
-COPY --from=builder usr/local/cuda-12.4/targets/x86_64-linux/lib/libcublasLt.so.12 usr/lib/x86_64-linux-gnu/libcublasLt.so.12
+RUN mkdir target_temp_lib
+COPY --from=builder temp_lib/libcuda.so.1 target_temp_lib/libcuda.so.1
+
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        cp target_temp_lib/libcuda.so.1 .;\
+    fi
+
+COPY --from=builder temp_lib/libcudart.so.11.0 usr/lib/x86_64-linux-gnu/libcudart.so.11.0
+COPY --from=builder temp_lib/libcublas.so.11 usr/lib/x86_64-linux-gnu/libcublas.so.11
+COPY --from=builder temp_lib/libcublasLt.so.11 usr/lib/x86_64-linux-gnu/libcublasLt.so.11
+COPY --from=builder temp_lib/libcudart.so.12 usr/lib/x86_64-linux-gnu/libcudart.so.12
+COPY --from=builder temp_lib/libcublas.so.12 usr/lib/x86_64-linux-gnu/libcublas.so.12
+COPY --from=builder temp_lib/libcublasLt.so.12 usr/lib/x86_64-linux-gnu/libcublasLt.so.12
 
 # These below 3 lines are for minibox, which is based on cuda12, but under test and without minization for the time being.
 #COPY --from=builder usr/lib/x86_64-linux-gnu/libcudart* usr/lib/x86_64-linux-gnu/
