@@ -83,16 +83,16 @@ func HandleUnload(w http.ResponseWriter, r *http.Request) {
 	downloadTasksLock.Unlock()
 
 	// DIFY设置MODEL
-	unsetResp, err := unsetDifyModel(r)
+	//unsetResp, err := unsetDifyModel(r)
 
 	runningType = ""
 
 	fmt.Fprintf(w, "Nitro Unload option: %s\n", option)
-	if err != nil {
-		fmt.Println("Dify model unset failed. Please retry or manually unset it.")
-		fmt.Fprintf(w, "Dify model unset failed. Please retry or manually unset it. Rsep body: %s\n", unsetResp)
-	} else {
-		fmt.Println("Dify model unset successfully!")
-		fmt.Fprintf(w, "Dify model unset successfully!")
-	}
+	//if err != nil {
+	//	fmt.Println("Dify model unset failed. Please retry or manually unset it.")
+	//	fmt.Fprintf(w, "Dify model unset failed. Please retry or manually unset it. Rsep body: %s\n", unsetResp)
+	//} else {
+	//	fmt.Println("Dify model unset successfully!")
+	//	fmt.Fprintf(w, "Dify model unset successfully!")
+	//}
 }

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"time"
 )
 
 var WASMPid = 0
@@ -241,23 +240,23 @@ func HandleWASMLoad(w http.ResponseWriter, r *http.Request) {
 	downloadTasksLock.Unlock()
 
 	// DIFY设置MODEL
-	modelStatus := 0
-	setResp := ""
-	for modelStatus != 200 {
-		modelStatus, setResp, err = setWasmDifyModel(r)
-		time.Sleep(1 * time.Second)
-	}
+	//modelStatus := 0
+	//setResp := ""
+	//for modelStatus != 200 {
+	//	modelStatus, setResp, err = setWasmDifyModel(r)
+	//	time.Sleep(1 * time.Second)
+	//}
 
 	runningType = "WASM"
 
 	// 返回结果
 	fmt.Fprintf(w, "WASM Load option: %s\n", option)
 	//fmt.Fprintf(w, "CURL output:\n%s\n", output)
-	if err != nil {
-		fmt.Println("Dify model set failed. Please retry or manually set it.")
-		fmt.Fprintf(w, "Dify model set failed. Please retry or manually set it. Rsep body: %s\n", setResp)
-	} else {
-		fmt.Println("Dify model set successfully!")
-		fmt.Fprintf(w, "Dify model set successfully! Resp body: %s\n", setResp)
-	}
+	//if err != nil {
+	//	fmt.Println("Dify model set failed. Please retry or manually set it.")
+	//	fmt.Fprintf(w, "Dify model set failed. Please retry or manually set it. Rsep body: %s\n", setResp)
+	//} else {
+	//	fmt.Println("Dify model set successfully!")
+	//	fmt.Fprintf(w, "Dify model set successfully! Resp body: %s\n", setResp)
+	//}
 }

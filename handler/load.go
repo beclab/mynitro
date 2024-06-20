@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"time"
 )
 
 var NitroPid = 0
@@ -149,25 +148,25 @@ func HandleLoad(w http.ResponseWriter, r *http.Request) {
 		downloadTasksLock.Unlock()
 
 		// DIFY设置MODEL
-		modelStatus := 0
-		setResp := ""
-		for modelStatus != 200 {
-			modelStatus, setResp, err = setDifyModel(r)
-			time.Sleep(1 * time.Second)
-		}
+		//modelStatus := 0
+		//setResp := ""
+		//for modelStatus != 200 {
+		//	modelStatus, setResp, err = setDifyModel(r)
+		//	time.Sleep(1 * time.Second)
+		//}
 
 		runningType = "Nitro"
 
 		// 返回结果
 		fmt.Fprintf(w, "Nitro Load option: %s\n", option)
 		fmt.Fprintf(w, "CURL output:\n%s\n", output)
-		if err != nil {
-			fmt.Println("Dify model set failed. Please retry or manually set it.")
-			fmt.Fprintf(w, "Dify model set failed. Please retry or manually set it. Rsep body: %s\n", setResp)
-		} else {
-			fmt.Println("Dify model set successfully!")
-			fmt.Fprintf(w, "Dify model set successfully! Resp body: %s\n", setResp)
-		}
+		//if err != nil {
+		//	fmt.Println("Dify model set failed. Please retry or manually set it.")
+		//	fmt.Fprintf(w, "Dify model set failed. Please retry or manually set it. Rsep body: %s\n", setResp)
+		//} else {
+		//	fmt.Println("Dify model set successfully!")
+		//	fmt.Fprintf(w, "Dify model set successfully! Resp body: %s\n", setResp)
+		//}
 	} else {
 		var modelPath string
 

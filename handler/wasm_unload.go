@@ -96,16 +96,16 @@ func HandleWASMUnload(w http.ResponseWriter, r *http.Request) {
 	downloadTasksLock.Unlock()
 
 	// DIFY设置MODEL
-	unsetResp, err := unsetWASMDifyModel(r)
+	//unsetResp, err := unsetWASMDifyModel(r)
 
 	runningType = ""
 
 	fmt.Fprintf(w, "WASM Unload option: %s\n", option)
-	if err != nil {
-		fmt.Println("Dify model unset failed. Please retry or manually unset it.")
-		fmt.Fprintf(w, "Dify model unset failed. Please retry or manually unset it. Rsep body: %s\n", unsetResp)
-	} else {
-		fmt.Println("Dify model unset successfully!")
-		fmt.Fprintf(w, "Dify model unset successfully!")
-	}
+	//if err != nil {
+	//	fmt.Println("Dify model unset failed. Please retry or manually unset it.")
+	//	fmt.Fprintf(w, "Dify model unset failed. Please retry or manually unset it. Rsep body: %s\n", unsetResp)
+	//} else {
+	//	fmt.Println("Dify model unset successfully!")
+	//	fmt.Fprintf(w, "Dify model unset successfully!")
+	//}
 }
