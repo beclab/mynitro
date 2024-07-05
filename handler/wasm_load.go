@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"time"
 )
 
 var WASMPid = 0
@@ -69,7 +70,7 @@ func KillProcess(pid int) error {
 }
 
 func setWasmDifyModel(r *http.Request) (int, string, error) {
-	url := "http://dify/console/api/workspaces/current/model-providers/openai_api_compatible/models"
+	url := DifyHost + "/console/api/workspaces/current/model-providers/openai_api_compatible/models"
 
 	cValue := os.Getenv("C_VALUE")
 
@@ -89,7 +90,7 @@ func setWasmDifyModel(r *http.Request) (int, string, error) {
 			"stream_function_calling": "not_supported",
 			"vision_support":          "no_support",
 			"stream_mode_delimiter":   "\\n\\n",
-			"endpoint_url":            "http://127.0.0.1:8081/v1",
+			"endpoint_url":            LLMHost + "/wasm/model_server/v1", //"http://127.0.0.1:8081/v1",
 			"api_key":                 "[__HIDDEN__]",
 		},
 	}
@@ -113,7 +114,7 @@ func setWasmDifyModel(r *http.Request) (int, string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("HTTP request error:", err)
-		return 0, "", err
+		return 404, "", err
 	}
 	defer resp.Body.Close()
 
@@ -125,7 +126,7 @@ func setWasmDifyModel(r *http.Request) (int, string, error) {
 	}
 
 	// 打印响应结果
-	fmt.Println(string(body))
+	fmt.Println(resp.StatusCode, string(body))
 	return resp.StatusCode, string(body), nil
 }
 
@@ -240,23 +241,28 @@ func HandleWASMLoad(w http.ResponseWriter, r *http.Request) {
 	downloadTasksLock.Unlock()
 
 	// DIFY设置MODEL
-	//modelStatus := 0
-	//setResp := ""
-	//for modelStatus != 200 {
-	//	modelStatus, setResp, err = setWasmDifyModel(r)
-	//	time.Sleep(1 * time.Second)
-	//}
+	modelStatus := 0
+	setResp := ""
+	for modelStatus != 200 {
+		modelStatus, setResp, err = setWasmDifyModel(r)
+		time.Sleep(1 * time.Second)
+
+		if modelStatus == 404 {
+			fmt.Println("Difyfusion not installed!")
+			break
+		}
+	}
 
 	runningType = "WASM"
 
 	// 返回结果
 	fmt.Fprintf(w, "WASM Load option: %s\n", option)
 	//fmt.Fprintf(w, "CURL output:\n%s\n", output)
-	//if err != nil {
-	//	fmt.Println("Dify model set failed. Please retry or manually set it.")
-	//	fmt.Fprintf(w, "Dify model set failed. Please retry or manually set it. Rsep body: %s\n", setResp)
-	//} else {
-	//	fmt.Println("Dify model set successfully!")
-	//	fmt.Fprintf(w, "Dify model set successfully! Resp body: %s\n", setResp)
-	//}
+	if err != nil {
+		fmt.Println("Dify model set failed. Please retry or manually set it.")
+		fmt.Fprintf(w, "Dify model set failed. Please retry or manually set it. Rsep body: %s\n", setResp)
+	} else {
+		fmt.Println("Dify model set successfully!")
+		fmt.Fprintf(w, "Dify model set successfully! Resp body: %s\n", setResp)
+	}
 }

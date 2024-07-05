@@ -9,8 +9,8 @@ import (
 	"os/exec"
 )
 
-func unsetDifyModel(r *http.Request) (string, error) {
-	url := "http://dify/console/api/workspaces/current/model-providers/openai_api_compatible/models"
+func unsetDifyModel(r *http.Request) (int, string, error) {
+	url := DifyHost + "/console/api/workspaces/current/model-providers/openai_api_compatible/models"
 
 	// 构建请求体数据
 	payload := map[string]interface{}{
@@ -20,14 +20,14 @@ func unsetDifyModel(r *http.Request) (string, error) {
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		fmt.Println("JSON marshal error:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	// 创建 HTTP 请求
 	req, err := http.NewRequest("DELETE", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		fmt.Println("HTTP request creation error:", err)
-		return "", err
+		return 0, "", err
 	}
 	req.Header = r.Header
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
@@ -37,7 +37,7 @@ func unsetDifyModel(r *http.Request) (string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("HTTP request error:", err)
-		return "", err
+		return 404, "", err
 	}
 	defer resp.Body.Close()
 
@@ -45,12 +45,12 @@ func unsetDifyModel(r *http.Request) (string, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Read response error:", err)
-		return "", err
+		return 0, "", err
 	}
 
 	// 打印响应结果
-	fmt.Println(string(body))
-	return string(body), nil
+	fmt.Println(resp.StatusCode, string(body))
+	return resp.StatusCode, string(body), nil
 }
 
 func HandleUnload(w http.ResponseWriter, r *http.Request) {
@@ -83,16 +83,18 @@ func HandleUnload(w http.ResponseWriter, r *http.Request) {
 	downloadTasksLock.Unlock()
 
 	// DIFY设置MODEL
-	//unsetResp, err := unsetDifyModel(r)
+	modelStatus, unsetResp, err := unsetDifyModel(r)
 
 	runningType = ""
 
 	fmt.Fprintf(w, "Nitro Unload option: %s\n", option)
-	//if err != nil {
-	//	fmt.Println("Dify model unset failed. Please retry or manually unset it.")
-	//	fmt.Fprintf(w, "Dify model unset failed. Please retry or manually unset it. Rsep body: %s\n", unsetResp)
-	//} else {
-	//	fmt.Println("Dify model unset successfully!")
-	//	fmt.Fprintf(w, "Dify model unset successfully!")
-	//}
+	if modelStatus == 404 {
+		fmt.Println("Difyfusion not installed!")
+	} else if err != nil {
+		fmt.Println("Dify model unset failed. Please retry or manually unset it.")
+		fmt.Fprintf(w, "Dify model unset failed. Please retry or manually unset it. Rsep body: %s\n", unsetResp)
+	} else {
+		fmt.Println("Dify model unset successfully!")
+		fmt.Fprintf(w, "Dify model unset successfully!")
+	}
 }
